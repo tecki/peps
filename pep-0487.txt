@@ -21,8 +21,7 @@ creating the potential for spurious metaclass conflicts.
 
 This PEP proposes to instead support a wide range of customisation
 scenarios through a new ``__init_subclass__`` hook in the class body,
-a hook to initialize attributes, and a way to keep the order in which
-attributes are defined.
+a hook to initialize attributes.
 
 Those hooks should at first be defined in a metaclass in the standard
 library, with the option that this metaclass eventually becomes the
@@ -71,8 +70,6 @@ The three use cases are achieved as follows:
    all subclasses of a given class,
 2. the metaclass calls a ``__set_owner__`` hook on all the attribute
    (descriptors) defined in the class, and
-3. an ``__attribute_order__`` tuple is left in the class in order to inspect
-   the order in which attributes were defined.
 
 For ease of use, a base class ``types.Object`` is defined, which uses said
 metaclass and contains an empty stub for the hook described for use case 1.
@@ -138,18 +135,6 @@ While this example looks very trivial, it should be noted that until
 now such an attribute cannot be defined without the use of a metaclass.
 And given that such a metaclass can make life very hard, this kind of
 attribute does not exist yet.
-
-The third part of the proposal is to leave a tuple called
-``__attribute_order__`` in the class that contains the order in which
-the attributes were defined. This is a very common usecase, many
-libraries use an ``OrderedDict`` to store this order. This is a very
-simple way to achieve the same goal.
-
-Under the hood, the implementation *does* ``__prepare__`` an
-``OrderedDict`` namespace, it just retains the order of the keys in
-``__attribute_order__``, since ``type.__new__`` will cripple the
-``OrderedDict`` into a normal ``dict``, discarding the order
-information.
 
 
 Key Benefits
@@ -370,6 +355,11 @@ In PEP 422 the hook worked more like the ``__new__`` method than the
 ``__init__`` method, meaning that it returned a class instead of
 modifying one. This allows a bit more flexibility, but at the cost
 of much harder implementation and undesired side effects.
+
+Adding a class attribute with the attribute order
+-------------------------------------------------
+
+This got its own PEP 520.
 
 
 History
