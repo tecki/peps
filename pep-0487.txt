@@ -25,7 +25,7 @@ and a hook to initialize attributes.
 
 The new mechanism should be easier to understand and use than
 implementing a custom metaclass, and thus should provide a gentler
-introduction to the full power Python's metaclass machinery.
+introduction to the full power of Python's metaclass machinery.
 
 
 Background
@@ -65,17 +65,17 @@ The third category is the topic of another PEP 520.
 
 As an example, the first use case looks as follows::
 
-   >>> class SpamBase:
+   >>> class QuestBase:
    ...    # this is implicitly a @classmethod
-   ...    def __init_subclass__(cls, **kwargs):
-   ...        cls.class_args = kwargs
-   ...        super().__init_subclass__(cls, **kwargs)
+   ...    def __init_subclass__(cls, swallow, **kwargs):
+   ...        cls.swallow = swallow
+   ...        super().__init_subclass__(**kwargs)
 
-   >>> class Spam(SpamBase, a=1, b="b"):
+   >>> class Quest(QuestBase, swallow="african"):
    ...    pass
 
-   >>> Spam.class_args
-   {'a': 1, 'b': 'b'}
+   >>> Quest.swallow
+   'african'
 
 The base class ``object`` contains an empty ``__init_subclass__``
 method which serves as an endpoint for cooperative multiple inheritance.
@@ -110,7 +110,7 @@ referenced values::
 
     class WeakAttribute:
         def __get__(self, instance, owner):
-            return instance.__dict__[self.name]
+            return instance.__dict__[self.name]()
 
         def __set__(self, instance, value):
             instance.__dict__[self.name] = weakref.ref(value)
@@ -173,10 +173,6 @@ breaching backwards compatibility guarantees.
 New Ways of Using Classes
 =========================
 
-This proposal has many usecases like the following. In the examples,
-we still inherit from the ``SubclassInit`` base class. This would
-become unnecessary once this PEP is included in Python directly.
-
 Subclass registration
 ---------------------
 
@@ -203,11 +199,18 @@ of a metaclass to work. This is how this would look like with this
 PEP::
 
    class Trait:
+       def __init__(self, minimum, maximum):
+           self.minimum = minimum
+           self.maximum = maximum
+
        def __get__(self, instance, owner):
            return instance.__dict__[self.key]
 
        def __set__(self, instance, value):
-           instance.__dict__[self.key] = value
+           if self.minimum < value < self.maximum:
+               instance.__dict__[self.key] = value
+           else:
+               raise ValueError("value not in range")
 
        def __set_owner__(self, owner, name):
            self.key = name
